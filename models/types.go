@@ -544,16 +544,14 @@ type TradeSide struct {
 	Intent OrderIntent `json:"intent"`
 }
 
-// Subscription type constants (integer values used by API).
-// Private WebSocket subscription types:
+// Private WebSocket subscription types (1, 3, 4 - type 2 is not used):
 const (
-	SubscriptionTypeOrder          = 1 // Order drop copy
-	SubscriptionTypeOrderSnapshot  = 2 // Order snapshot
-	SubscriptionTypePosition       = 3 // Position updates
+	SubscriptionTypeOrder          = 1 // Order updates (new, filled, canceled)
+	SubscriptionTypePosition       = 3 // Position changes
 	SubscriptionTypeAccountBalance = 4 // Account balance updates
 )
 
-// Markets WebSocket subscription types:
+// Markets WebSocket subscription types (1, 2, 3):
 const (
 	SubscriptionTypeMarketData     = 1 // Full order book
 	SubscriptionTypeMarketDataLite = 2 // Price summary only

@@ -47,9 +47,15 @@ func main() {
 	log.Println("  REST client initialized")
 	log.Println("  WebSocket client initialized")
 
-	// Track market data received for summary
+	// Track WebSocket data received for verification
 	var marketDataReceived []string
 	var marketDataMu sync.Mutex
+
+	// Track subscription confirmations for testing
+	var balanceSnapshotReceived bool
+	var positionUpdateReceived bool
+	var orderUpdateReceived bool
+	var subscriptionMu sync.Mutex
 
 	// Setup graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -137,8 +143,9 @@ func main() {
 	} else {
 		log.Println("  WebSocket connected successfully")
 
-		// Start message handler
-		go handleWSMessages(ctx, wsClient, &marketDataReceived, &marketDataMu)
+		// Start message handler with subscription tracking
+		go handleWSMessages(ctx, wsClient, &marketDataReceived, &marketDataMu,
+			&balanceSnapshotReceived, &positionUpdateReceived, &orderUpdateReceived, &subscriptionMu)
 
 		// 8. Subscribe to private streams
 		// Doc: api-reference/websocket/private.mdx - Subscription Types
@@ -325,6 +332,14 @@ func main() {
 	}
 	marketDataMu.Unlock()
 
+	// 18b. Verify private WebSocket subscriptions
+	log.Println("\n[STEP 18b] Private WebSocket subscription verification...")
+	subscriptionMu.Lock()
+	log.Printf("  Order snapshot received: %t", orderUpdateReceived)
+	log.Printf("  Balance snapshot received: %t", balanceSnapshotReceived)
+	log.Printf("  Position update received: %t", positionUpdateReceived)
+	subscriptionMu.Unlock()
+
 	// 19. Clean shutdown
 	log.Println("\n[STEP 19] Cleaning up...")
 	if wsClient.IsConnected() {
@@ -340,7 +355,8 @@ func main() {
 }
 
 // handleWSMessages processes WebSocket messages.
-func handleWSMessages(ctx context.Context, wsClient *client.WSClient, marketData *[]string, mu *sync.Mutex) {
+func handleWSMessages(ctx context.Context, wsClient *client.WSClient, marketData *[]string, mu *sync.Mutex,
+	balanceSnapshotReceived, positionUpdateReceived, orderUpdateReceived *bool, subscriptionMu *sync.Mutex) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -363,6 +379,9 @@ func handleWSMessages(ctx context.Context, wsClient *client.WSClient, marketData
 				for _, o := range msg.OrderSubscriptionSnapshot.Orders {
 					log.Printf("[WS]   - %s: %s %s @ %s", o.ID, o.State, o.Side, o.Price.Value)
 				}
+				subscriptionMu.Lock()
+				*orderUpdateReceived = true
+				subscriptionMu.Unlock()
 			}
 
 			// Handle order update
@@ -382,6 +401,9 @@ func handleWSMessages(ctx context.Context, wsClient *client.WSClient, marketData
 				if msg.PositionSubscription.AfterPosition != nil {
 					log.Printf("[WS]   Net position: %s", msg.PositionSubscription.AfterPosition.NetPosition)
 				}
+				subscriptionMu.Lock()
+				*positionUpdateReceived = true
+				subscriptionMu.Unlock()
 			}
 
 			// Handle balance snapshot
@@ -391,6 +413,9 @@ func handleWSMessages(ctx context.Context, wsClient *client.WSClient, marketData
 				for _, b := range msg.AccountBalancesSnapshot.Balances {
 					log.Printf("[WS]   %s: $%.2f (buying power: $%.2f)", b.Currency, b.CurrentBalance, b.BuyingPower)
 				}
+				subscriptionMu.Lock()
+				*balanceSnapshotReceived = true
+				subscriptionMu.Unlock()
 			}
 
 			// Handle balance update

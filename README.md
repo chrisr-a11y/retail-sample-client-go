@@ -182,28 +182,22 @@ This section documents how the API documentation aligns with the actual API beha
 | Value | Documentation | Implementation | Status |
 |-------|---------------|----------------|--------|
 | 1 | ORDER | ORDER | ✅ Match |
-| 2 | POSITION | ORDER_SNAPSHOT* | ⚠️ Discrepancy |
-| 3 | ACCOUNT_BALANCE | POSITION | ⚠️ Discrepancy |
-| 4 | - | ACCOUNT_BALANCE | ⚠️ Discrepancy |
+| 3 | POSITION | POSITION | ✅ Match |
+| 4 | ACCOUNT_BALANCE | ACCOUNT_BALANCE | ✅ Match |
 
-**Note**: Our implementation uses 1=ORDER, 3=POSITION, 4=ACCOUNT_BALANCE and it works. The docs may need updating.
+**Note**: Type 2 is unused/reserved on the private WebSocket.
 
-**File**: `models/types.go:550`
+**File**: `models/types.go:547`
 
 ### Markets WebSocket Subscription Types
 
 | Value | Documentation | Implementation | Status |
 |-------|---------------|----------------|--------|
-| 4 | MARKET_DATA | - | ⚠️ Discrepancy |
-| 5 | MARKET_DATA_LITE | - | ⚠️ Discrepancy |
-| 6 | TRADE | - | ⚠️ Discrepancy |
-| 1 | - | MARKET_DATA | ⚠️ Discrepancy |
-| 2 | - | MARKET_DATA_LITE | ⚠️ Discrepancy |
-| 3 | - | TRADE | ⚠️ Discrepancy |
+| 1 | MARKET_DATA | MARKET_DATA | ✅ Match |
+| 2 | MARKET_DATA_LITE | MARKET_DATA_LITE | ✅ Match |
+| 3 | TRADE | TRADE | ✅ Match |
 
-**Note**: Our implementation uses 1=MARKET_DATA, 2=MARKET_DATA_LITE, 3=TRADE and it works. The docs may need updating.
-
-**File**: `models/types.go:558`
+**File**: `models/types.go:554`
 
 ---
 
@@ -220,13 +214,9 @@ This section documents how the API documentation aligns with the actual API beha
 | Market API | ✅ Accurate | Field types correct |
 | WebSocket Auth | ✅ Accurate | Same as REST |
 | WebSocket Messages | ✅ Accurate | snake_case, integers |
-| WS Subscription Types | ⚠️ Needs Update | Numbers in docs don't match working implementation |
+| WS Subscription Types | ✅ Accurate | All subscription type numbers match |
 
-### Remaining Documentation Issues
-
-1. **Private WebSocket Subscription Types**: Docs show 1=ORDER, 2=POSITION, 3=ACCOUNT_BALANCE. Working implementation uses 1=ORDER, 3=POSITION, 4=ACCOUNT_BALANCE.
-
-2. **Markets WebSocket Subscription Types**: Docs show 4=MARKET_DATA, 5=MARKET_DATA_LITE, 6=TRADE. Working implementation uses 1=MARKET_DATA, 2=MARKET_DATA_LITE, 3=TRADE.
+All documentation is now accurate and matches the API implementation.
 
 ---
 
