@@ -9,8 +9,8 @@ type Amount struct {
 	Currency string `json:"currency"` // Currency code e.g. "USD"
 }
 
-// OrderType defines the type of order.
-// Doc: api-reference/orders/overview.mdx - Order Types
+// OrderType defines the type of order (string in responses).
+// Note: Responses use strings, requests use integers
 type OrderType string
 
 const (
@@ -18,8 +18,14 @@ const (
 	OrderTypeMarket OrderType = "ORDER_TYPE_MARKET"
 )
 
-// OrderSide defines buy or sell side.
-// Doc: api-reference/oapi-schemas/orders-schema.json - OrderSide enum
+// Request integer constants for order type
+const (
+	OrderTypeRequestLimit  = 1
+	OrderTypeRequestMarket = 2
+)
+
+// OrderSide defines buy or sell side (string in responses).
+// Note: Responses use strings like "ORDER_SIDE_BUY"
 type OrderSide string
 
 const (
@@ -27,19 +33,27 @@ const (
 	OrderSideSell OrderSide = "ORDER_SIDE_SELL"
 )
 
-// OrderIntent indicates position direction.
-// Doc: api-reference/orders/overview.mdx - Order Intent
+// OrderIntent indicates position direction (string in responses).
+// Note: Responses use strings, requests use integers
 type OrderIntent string
 
 const (
-	OrderIntentBuyLong   OrderIntent = "ORDER_INTENT_BUY_LONG"   // Buy to open/increase long
-	OrderIntentSellLong  OrderIntent = "ORDER_INTENT_SELL_LONG"  // Sell to close/reduce long
-	OrderIntentBuyShort  OrderIntent = "ORDER_INTENT_BUY_SHORT"  // Buy to close/reduce short
-	OrderIntentSellShort OrderIntent = "ORDER_INTENT_SELL_SHORT" // Sell to open/increase short
+	OrderIntentBuyLong   OrderIntent = "ORDER_INTENT_BUY_LONG"
+	OrderIntentSellLong  OrderIntent = "ORDER_INTENT_SELL_LONG"
+	OrderIntentBuyShort  OrderIntent = "ORDER_INTENT_BUY_SHORT"
+	OrderIntentSellShort OrderIntent = "ORDER_INTENT_SELL_SHORT"
 )
 
-// TimeInForce defines order duration.
-// Doc: api-reference/orders/overview.mdx - Time in Force
+// Request integer constants for order intent
+const (
+	OrderIntentRequestBuyYes  = 1 // Buy Yes shares
+	OrderIntentRequestSellYes = 2 // Sell Yes shares
+	OrderIntentRequestBuyNo   = 3 // Buy No shares
+	OrderIntentRequestSellNo  = 4 // Sell No shares
+)
+
+// TimeInForce defines order duration (string in responses).
+// Note: Responses use strings, requests use integers
 type TimeInForce string
 
 const (
@@ -47,6 +61,14 @@ const (
 	TIFGoodTillDate      TimeInForce = "TIME_IN_FORCE_GOOD_TILL_DATE"
 	TIFImmediateOrCancel TimeInForce = "TIME_IN_FORCE_IMMEDIATE_OR_CANCEL"
 	TIFFillOrKill        TimeInForce = "TIME_IN_FORCE_FILL_OR_KILL"
+)
+
+// Request integer constants for time in force
+const (
+	TIFRequestGTC = 1 // Good Till Cancel
+	TIFRequestGTD = 2 // Good Till Date
+	TIFRequestIOC = 3 // Immediate Or Cancel
+	TIFRequestFOK = 4 // Fill Or Kill
 )
 
 // OrderState represents the current state of an order.
@@ -112,21 +134,20 @@ type Order struct {
 }
 
 // CreateOrderRequest is the request to create a new order.
-// Doc: api-reference/orders/overview.mdx - POST /v1/orders
-// Schema: api-reference/oapi-schemas/orders-schema.json - CreateOrderRequest
+// Note: API uses snake_case field names and integer enums for type/intent/tif
 type CreateOrderRequest struct {
-	MarketSlug             string      `json:"marketSlug"`
-	Type                   OrderType   `json:"type,omitempty"`
-	Price                  *Amount     `json:"price,omitempty"`
-	Quantity               float64     `json:"quantity,omitempty"`
-	TIF                    TimeInForce `json:"tif,omitempty"`
-	GoodTillTime           string      `json:"goodTillTime,omitempty"`
-	Intent                 OrderIntent `json:"intent"`
-	CashOrderQty           *Amount     `json:"cashOrderQty,omitempty"`
-	ParticipateDoNotInit   bool        `json:"participateDontInitiate,omitempty"`
-	SynchronousExecution   bool        `json:"synchronousExecution,omitempty"`
-	MaxBlockTime           string      `json:"maxBlockTime,omitempty"`
-	ManualOrderIndicator   string      `json:"manualOrderIndicator,omitempty"`
+	MarketSlug           string  `json:"market_slug"`
+	Type                 int     `json:"type,omitempty"`     // 1=LIMIT, 2=MARKET
+	Price                *Amount `json:"price,omitempty"`
+	Quantity             float64 `json:"quantity,omitempty"`
+	TIF                  int     `json:"tif,omitempty"`      // 1=GTC, 2=GTD, 3=IOC, 4=FOK
+	GoodTillTime         string  `json:"good_till_time,omitempty"`
+	Intent               int     `json:"intent"`             // 1=BUY_YES, 2=SELL_YES, 3=BUY_NO, 4=SELL_NO
+	CashOrderQty         *Amount `json:"cash_order_qty,omitempty"`
+	ParticipateDoNotInit bool    `json:"participate_dont_initiate,omitempty"`
+	SynchronousExecution bool    `json:"synchronous_execution,omitempty"`
+	MaxBlockTime         string  `json:"max_block_time,omitempty"`
+	ManualOrderIndicator string  `json:"manual_order_indicator,omitempty"`
 }
 
 // Execution represents an order execution.
@@ -362,31 +383,30 @@ type MarketSettlement struct {
 }
 
 // ========== WebSocket Types ==========
-// Doc: api-reference/websocket/overview.mdx - Message Format
+// Note: API uses snake_case field names and integer subscription types
 
 // WSSubscribeRequest is a WebSocket subscription request.
-// Doc: api-reference/websocket/overview.mdx - Request Format
 type WSSubscribeRequest struct {
 	Subscribe *WSSubscription `json:"subscribe"`
 }
 
 // WSSubscription defines what to subscribe to.
+// Note: API uses snake_case and integer subscription_type
 type WSSubscription struct {
-	RequestID          string   `json:"requestId"`
-	SubscriptionType   string   `json:"subscriptionType"`
-	MarketSlugs        []string `json:"marketSlugs,omitempty"`
-	ResponsesDebounced bool     `json:"responsesDebounced,omitempty"`
+	RequestID          string   `json:"request_id"`
+	SubscriptionType   int      `json:"subscription_type"`
+	MarketSlugs        []string `json:"market_slugs,omitempty"`
+	ResponsesDebounced bool     `json:"responses_debounced,omitempty"`
 }
 
 // WSUnsubscribeRequest unsubscribes from a stream.
-// Doc: api-reference/websocket/overview.mdx - Unsubscribing
 type WSUnsubscribeRequest struct {
 	Unsubscribe *WSUnsubscription `json:"unsubscribe"`
 }
 
 // WSUnsubscription identifies the subscription to cancel.
 type WSUnsubscription struct {
-	RequestID string `json:"requestId"`
+	RequestID string `json:"request_id"`
 }
 
 // WSMessage is a generic WebSocket message.
@@ -524,20 +544,20 @@ type TradeSide struct {
 	Intent OrderIntent `json:"intent"`
 }
 
-// Subscription type constants.
-// Doc: api-reference/websocket/private.mdx - Subscription Types
-// Doc: api-reference/websocket/markets.mdx - Subscription Types
+// Subscription type constants (integer values used by API).
+// Private WebSocket subscription types:
 const (
-	// Private subscriptions
-	SubscriptionTypeOrder          = "SUBSCRIPTION_TYPE_ORDER"
-	SubscriptionTypeOrderSnapshot  = "SUBSCRIPTION_TYPE_ORDER_SNAPSHOT"
-	SubscriptionTypePosition       = "SUBSCRIPTION_TYPE_POSITION"
-	SubscriptionTypeAccountBalance = "SUBSCRIPTION_TYPE_ACCOUNT_BALANCE"
+	SubscriptionTypeOrder          = 1 // Order drop copy
+	SubscriptionTypeOrderSnapshot  = 2 // Order snapshot
+	SubscriptionTypePosition       = 3 // Position updates
+	SubscriptionTypeAccountBalance = 4 // Account balance updates
+)
 
-	// Market subscriptions
-	SubscriptionTypeMarketData     = "SUBSCRIPTION_TYPE_MARKET_DATA"
-	SubscriptionTypeMarketDataLite = "SUBSCRIPTION_TYPE_MARKET_DATA_LITE"
-	SubscriptionTypeTrade          = "SUBSCRIPTION_TYPE_TRADE"
+// Markets WebSocket subscription types:
+const (
+	SubscriptionTypeMarketData     = 1 // Full order book
+	SubscriptionTypeMarketDataLite = 2 // Price summary only
+	SubscriptionTypeTrade          = 3 // Trade feed
 )
 
 // Market state constants.

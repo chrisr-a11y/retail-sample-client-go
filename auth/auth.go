@@ -51,61 +51,42 @@ func SignRequest(req *http.Request, cfg *config.Config) error {
 }
 
 // GenerateWSHeaders generates authentication headers for WebSocket connections.
-// Doc: api-reference/websocket/overview.mdx - Authentication
-//
-// WebSocket headers (different from REST):
-//   - X-API-Key: API key
-//   - X-API-Signature: Signature for the connection
-//   - X-API-Timestamp: Current timestamp in milliseconds
-//   - X-API-Passphrase: Derived from signing the API key
+// WebSocket uses same auth as REST: X-PM-Access-Key, X-PM-Timestamp, X-PM-Signature
 func GenerateWSHeaders(cfg *config.Config) http.Header {
 	headers := make(http.Header)
 
 	// Generate timestamp in milliseconds
 	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-	// For WebSocket, sign the timestamp + GET + path
-	// The path for WebSocket connection is typically just the endpoint
+	// Sign: {timestamp}GET{path}
 	message := timestamp + "GET" + "/v1/ws/private"
 	signature := ed25519.Sign(cfg.PrivateKey, []byte(message))
 	signatureB64 := base64.StdEncoding.EncodeToString(signature)
 
-	// Generate passphrase by signing the API key
-	// This derives the passphrase from the API key and private key
-	passphraseMessage := cfg.APIKey
-	passphraseSignature := ed25519.Sign(cfg.PrivateKey, []byte(passphraseMessage))
-	passphraseB64 := base64.StdEncoding.EncodeToString(passphraseSignature)
-
-	// Set WebSocket authentication headers
-	// Doc: api-reference/websocket/overview.mdx - Authentication section
-	headers.Set("X-API-Key", cfg.APIKey)
-	headers.Set("X-API-Timestamp", timestamp)
-	headers.Set("X-API-Signature", signatureB64)
-	headers.Set("X-API-Passphrase", passphraseB64)
+	// WebSocket uses same headers as REST API
+	headers.Set("X-PM-Access-Key", cfg.APIKey)
+	headers.Set("X-PM-Timestamp", timestamp)
+	headers.Set("X-PM-Signature", signatureB64)
 
 	return headers
 }
 
 // GenerateWSMarketsHeaders generates authentication headers for the markets WebSocket.
-// Doc: api-reference/websocket/markets.mdx - endpoint
+// WebSocket uses same auth as REST: X-PM-Access-Key, X-PM-Timestamp, X-PM-Signature
 func GenerateWSMarketsHeaders(cfg *config.Config) http.Header {
 	headers := make(http.Header)
 
 	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-	// Sign for markets endpoint
+	// Sign: {timestamp}GET{path}
 	message := timestamp + "GET" + "/v1/ws/markets"
 	signature := ed25519.Sign(cfg.PrivateKey, []byte(message))
 	signatureB64 := base64.StdEncoding.EncodeToString(signature)
 
-	// Generate passphrase
-	passphraseSignature := ed25519.Sign(cfg.PrivateKey, []byte(cfg.APIKey))
-	passphraseB64 := base64.StdEncoding.EncodeToString(passphraseSignature)
-
-	headers.Set("X-API-Key", cfg.APIKey)
-	headers.Set("X-API-Timestamp", timestamp)
-	headers.Set("X-API-Signature", signatureB64)
-	headers.Set("X-API-Passphrase", passphraseB64)
+	// WebSocket uses same headers as REST API
+	headers.Set("X-PM-Access-Key", cfg.APIKey)
+	headers.Set("X-PM-Timestamp", timestamp)
+	headers.Set("X-PM-Signature", signatureB64)
 
 	return headers
 }

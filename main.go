@@ -193,15 +193,14 @@ func main() {
 
 	orderReq := &models.CreateOrderRequest{
 		MarketSlug: cfg.Symbol,
-		Intent:     models.OrderIntentBuyLong,
-		Type:       models.OrderTypeLimit,
+		Intent:     models.OrderIntentRequestBuyYes,  // 1 = Buy Yes
+		Type:       models.OrderTypeRequestLimit,    // 1 = Limit
 		Price: &models.Amount{
 			Value:    "0.01",
 			Currency: "USD",
 		},
-		Quantity:           10,
-		TIF:                models.TIFGoodTillCancel,
-		SynchronousExecution: true,
+		Quantity: 10,
+		TIF:      models.TIFRequestGTC, // 1 = Good Till Cancel
 	}
 
 	var orderID string
