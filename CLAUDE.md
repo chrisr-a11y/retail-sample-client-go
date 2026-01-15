@@ -88,6 +88,28 @@ All code includes documentation references in comments:
 
 ## Goal
 
-This client serves as both:
-1. A working example for developers integrating with the Polymarket Retail API
-2. A test harness to exercise and validate API functionality
+**Primary purpose**: This project tests whether the API documentation enables building a correct implementation from docs alone.
+
+This client serves as:
+1. A validation tool to verify the accuracy and completeness of API documentation
+2. A working example for developers integrating with the Polymarket Retail API
+3. A test harness to exercise and validate API functionality
+
+## Documentation Accuracy Findings
+
+During implementation, we discovered the following about documentation quality:
+
+### OpenAPI Schemas (Accurate ✓)
+The JSON schemas at `api-reference/oapi-schemas/*.json` are authoritative and accurate:
+- `portfolio-schema.json` correctly documents `positions` as a map (not array)
+- `Activity` type correctly shows nested `trade`, `positionResolution`, `accountBalanceChange` objects
+- `market-schema.json` correctly shows `line` as number and `outcomeTeamA/B` as integer
+
+### Authentication Docs (Minor Ambiguity)
+`api/authentication.mdx` - Signature format is correct but could be clearer:
+- States: `{timestamp}{HTTP_METHOD}{URL_PATH}`
+- Example only shows path without query params: `/v1/portfolio/positions`
+- **Clarification needed**: Explicitly state that URL_PATH does NOT include query parameters
+
+### Recommendation
+When implementing, prioritize OpenAPI JSON schemas over narrative `.mdx` docs. The schemas are the source of truth for data structures.
