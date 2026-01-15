@@ -6,6 +6,7 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,10 +28,20 @@ type RestClient struct {
 
 // NewRestClient creates a new REST API client.
 func NewRestClient(cfg *config.Config) *RestClient {
+	transport := &http.Transport{}
+
+	// Configure TLS for staging/development with self-signed certs
+	if cfg.InsecureSkipVerify {
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
 	return &RestClient{
 		config: cfg,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout:   30 * time.Second,
+			Transport: transport,
 		},
 	}
 }

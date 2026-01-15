@@ -5,6 +5,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -51,11 +52,20 @@ func (c *WSClient) Connect() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Configure TLS for staging/development with self-signed certs
+	var tlsConfig *tls.Config
+	if c.config.InsecureSkipVerify {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
 	// Connect to private WebSocket
 	// Doc: api-reference/websocket/private.mdx - Endpoint
 	privateHeaders := auth.GenerateWSHeaders(c.config)
 	privateDialer := websocket.Dialer{
 		HandshakeTimeout: 10 * time.Second,
+		TLSClientConfig:  tlsConfig,
 	}
 
 	privateConn, _, err := privateDialer.Dial(c.privateURL, privateHeaders)
@@ -70,6 +80,7 @@ func (c *WSClient) Connect() error {
 	marketsHeaders := auth.GenerateWSMarketsHeaders(c.config)
 	marketsDialer := websocket.Dialer{
 		HandshakeTimeout: 10 * time.Second,
+		TLSClientConfig:  tlsConfig,
 	}
 
 	marketsConn, _, err := marketsDialer.Dial(c.marketsURL, marketsHeaders)
