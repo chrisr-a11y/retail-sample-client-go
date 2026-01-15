@@ -2,8 +2,6 @@
 // Doc: api-reference/oapi-schemas/orders-schema.json - components/schemas
 package models
 
-import "time"
-
 // Amount represents a monetary amount with currency.
 // Doc: api-reference/oapi-schemas/orders-schema.json - Amount schema
 type Amount struct {
@@ -226,14 +224,18 @@ type GetBalancesResponse struct {
 	Balances []Balance `json:"balances"`
 }
 
-// Position represents a trading position.
+// UserPosition represents a trading position.
 // Doc: api-reference/portfolio/overview.mdx - Position Fields
-type Position struct {
+// Schema: api-reference/oapi-schemas/portfolio-schema.json - UserPosition
+type UserPosition struct {
 	NetPosition    string          `json:"netPosition"`
 	QtyBought      string          `json:"qtyBought,omitempty"`
 	QtySold        string          `json:"qtySold,omitempty"`
 	Cost           *Amount         `json:"cost,omitempty"`
 	Realized       *Amount         `json:"realized,omitempty"`
+	BodPosition    string          `json:"bodPosition,omitempty"`
+	Expired        bool            `json:"expired,omitempty"`
+	UpdateTime     string          `json:"updateTime,omitempty"`
 	CashValue      *Amount         `json:"cashValue,omitempty"`
 	QtyAvailable   string          `json:"qtyAvailable,omitempty"`
 	MarketMetadata *MarketMetadata `json:"marketMetadata,omitempty"`
@@ -241,25 +243,64 @@ type Position struct {
 
 // GetPositionsResponse is the response from getting positions.
 // Doc: api-reference/portfolio/overview.mdx - Pagination
+// Schema: api-reference/oapi-schemas/portfolio-schema.json - GetUserPositionsResponse
+// Note: positions is a map of market slug to UserPosition, not an array
 type GetPositionsResponse struct {
-	Positions  []Position `json:"positions"`
-	NextCursor string     `json:"nextCursor,omitempty"`
-	EOF        bool       `json:"eof"`
+	Positions          map[string]UserPosition `json:"positions"`
+	NextCursor         string                  `json:"nextCursor,omitempty"`
+	EOF                bool                    `json:"eof"`
+	AvailablePositions []string                `json:"availablePositions,omitempty"`
 }
 
 // Activity represents a trading activity.
 // Doc: api-reference/portfolio/overview.mdx - Activity Types
+// Schema: api-reference/oapi-schemas/portfolio-schema.json - Activity
 type Activity struct {
-	ID         string          `json:"id"`
-	Type       string          `json:"type"`
-	MarketSlug string          `json:"marketSlug,omitempty"`
-	Amount     *Amount         `json:"amount,omitempty"`
-	Timestamp  time.Time       `json:"timestamp"`
-	Metadata   *MarketMetadata `json:"metadata,omitempty"`
+	Type               string               `json:"type"`
+	Trade              *Trade               `json:"trade,omitempty"`
+	PositionResolution *PositionResolution  `json:"positionResolution,omitempty"`
+	AccountBalanceChange *AccountBalanceChange `json:"accountBalanceChange,omitempty"`
+}
+
+// Trade represents a trade execution.
+// Schema: api-reference/oapi-schemas/portfolio-schema.json - Trade
+type Trade struct {
+	ID          string  `json:"id"`
+	MarketSlug  string  `json:"marketSlug"`
+	State       string  `json:"state"`
+	CreateTime  string  `json:"createTime"`
+	UpdateTime  string  `json:"updateTime,omitempty"`
+	Price       *Amount `json:"price"`
+	Qty         string  `json:"qty"`
+	IsAggressor bool    `json:"isAggressor"`
+	CostBasis   *Amount `json:"costBasis,omitempty"`
+	RealizedPnl *Amount `json:"realizedPnl,omitempty"`
+}
+
+// PositionResolution represents a position resolution event.
+// Schema: api-reference/oapi-schemas/portfolio-schema.json - PositionResolution
+type PositionResolution struct {
+	MarketSlug     string        `json:"marketSlug"`
+	BeforePosition *UserPosition `json:"beforePosition,omitempty"`
+	AfterPosition  *UserPosition `json:"afterPosition,omitempty"`
+	UpdateTime     string        `json:"updateTime,omitempty"`
+	TradeID        string        `json:"tradeId,omitempty"`
+	Side           string        `json:"side,omitempty"`
+}
+
+// AccountBalanceChange represents a balance change event.
+// Schema: api-reference/oapi-schemas/portfolio-schema.json - AccountBalanceChange
+type AccountBalanceChange struct {
+	TransactionID string  `json:"transactionId"`
+	Status        string  `json:"status"`
+	Amount        *Amount `json:"amount"`
+	UpdateTime    string  `json:"updateTime,omitempty"`
+	CreateTime    string  `json:"createTime,omitempty"`
 }
 
 // GetActivitiesResponse is the response from getting activities.
 // Doc: api-reference/portfolio/overview.mdx - Pagination
+// Schema: api-reference/oapi-schemas/portfolio-schema.json - GetActivitiesResponse
 type GetActivitiesResponse struct {
 	Activities []Activity `json:"activities"`
 	NextCursor string     `json:"nextCursor,omitempty"`
@@ -293,12 +334,13 @@ type Market struct {
 	Volume1mo          float64 `json:"volume1mo,omitempty"`
 	// Sports market fields
 	// Doc: api-reference/market/overview.mdx - Sports Market Fields
-	SportsMarketTypeV2 string `json:"sportsMarketTypeV2,omitempty"`
-	GameID             string `json:"gameId,omitempty"`
-	Line               string `json:"line,omitempty"`
-	PropType           string `json:"propType,omitempty"`
-	OutcomeTeamA       string `json:"outcomeTeamA,omitempty"`
-	OutcomeTeamB       string `json:"outcomeTeamB,omitempty"`
+	// Schema: api-reference/oapi-schemas/market-schema.json - Market schema
+	SportsMarketTypeV2 string   `json:"sportsMarketTypeV2,omitempty"`
+	GameID             string   `json:"gameId,omitempty"`
+	Line               *float64 `json:"line,omitempty"`       // number in schema
+	PropType           string   `json:"propType,omitempty"`
+	OutcomeTeamA       *int     `json:"outcomeTeamA,omitempty"` // integer in schema
+	OutcomeTeamB       *int     `json:"outcomeTeamB,omitempty"` // integer in schema
 }
 
 // GetMarketsResponse is the response from listing markets.
@@ -395,11 +437,11 @@ type OrderUpdate struct {
 // PositionUpdate is a position change notification.
 // Doc: api-reference/websocket/private.mdx - Position Update Response
 type PositionUpdate struct {
-	BeforePosition *Position `json:"beforePosition,omitempty"`
-	AfterPosition  *Position `json:"afterPosition,omitempty"`
-	UpdateTime     string    `json:"updateTime,omitempty"`
-	EntryType      string    `json:"entryType,omitempty"`
-	TradeID        string    `json:"tradeId,omitempty"`
+	BeforePosition *UserPosition `json:"beforePosition,omitempty"`
+	AfterPosition  *UserPosition `json:"afterPosition,omitempty"`
+	UpdateTime     string        `json:"updateTime,omitempty"`
+	EntryType      string        `json:"entryType,omitempty"`
+	TradeID        string        `json:"tradeId,omitempty"`
 }
 
 // BalanceSnapshot is the initial balance snapshot.

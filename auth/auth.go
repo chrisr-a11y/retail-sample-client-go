@@ -32,11 +32,9 @@ func SignRequest(req *http.Request, cfg *config.Config) error {
 	// Build message to sign
 	// Doc: api/authentication.mdx - Signature Format
 	// Format: {timestamp}{HTTP_METHOD}{URL_PATH}
+	// Note: URL_PATH does NOT include query parameters per the docs example
 	method := req.Method
 	path := req.URL.Path
-	if req.URL.RawQuery != "" {
-		path = path + "?" + req.URL.RawQuery
-	}
 	message := timestamp + method + path
 
 	// Sign the message with Ed25519

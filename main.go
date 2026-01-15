@@ -112,6 +112,7 @@ func main() {
 
 	// 6. Get current positions
 	// Doc: api-reference/portfolio/overview.mdx - GET /v1/portfolio/positions
+	// Note: positions is a map of market slug to UserPosition
 	log.Println("\n[STEP 6] Getting current positions...")
 	positions, err := restClient.GetPositions("", 10, "")
 	if err != nil {
@@ -121,11 +122,7 @@ func main() {
 			log.Println("  No open positions")
 		} else {
 			log.Printf("  Found %d positions:", len(positions.Positions))
-			for _, p := range positions.Positions {
-				slug := "unknown"
-				if p.MarketMetadata != nil {
-					slug = p.MarketMetadata.Slug
-				}
+			for slug, p := range positions.Positions {
 				log.Printf("    - %s: qty=%s", slug, p.NetPosition)
 			}
 		}
@@ -287,6 +284,7 @@ func main() {
 
 	// 17. Get activity history
 	// Doc: api-reference/portfolio/overview.mdx - GET /v1/portfolio/activities
+	// Schema: api-reference/oapi-schemas/portfolio-schema.json - Activity
 	log.Println("\n[STEP 17] Getting recent activity...")
 	activities, err := restClient.GetActivities("", nil, 5, "", "")
 	if err != nil {
@@ -297,7 +295,15 @@ func main() {
 		} else {
 			log.Printf("  Found %d activities:", len(activities.Activities))
 			for _, a := range activities.Activities {
-				log.Printf("    - %s: %s", a.Type, a.Timestamp.Format(time.RFC3339))
+				detail := ""
+				if a.Trade != nil {
+					detail = fmt.Sprintf("market=%s, qty=%s", a.Trade.MarketSlug, a.Trade.Qty)
+				} else if a.PositionResolution != nil {
+					detail = fmt.Sprintf("market=%s", a.PositionResolution.MarketSlug)
+				} else if a.AccountBalanceChange != nil {
+					detail = fmt.Sprintf("txn=%s", a.AccountBalanceChange.TransactionID)
+				}
+				log.Printf("    - %s: %s", a.Type, detail)
 			}
 		}
 	}
